@@ -1,0 +1,113 @@
+syntax = "proto3";
+package player.v1;
+
+service VideoPlayerService {
+    rpc GetVersion(GetVersionRequest) returns (GetVersionResponse) {}
+    rpc LibraryUpdate(LibraryUpdateRequest) returns (LibraryUpdateResponse) {}
+    rpc LibraryGetFolderContent(LibraryGetFolderContentRequest) returns (LibraryGetFolderContentResponse) {}
+    rpc LibraryGetVideoByID(LibraryGetVideoByIDRequest) returns (LibraryGetVideoByIDResponse) {}
+    rpc PlayerGetState(PlayerGetStateRequest) returns (PlayerGetStateResponse) {}
+    rpc PlayerStreamState(PlayerStreamStateRequest) returns (stream PlayerStreamStateResponse) {}
+    rpc PlayerOpenVideo(PlayerOpenVideoRequest) returns (PlayerOpenVideoResponse) {}
+    rpc PlayerStop(PlayerStopRequest) returns (PlayerStopResponse) {}
+    rpc PlayerPlayPause(PlayerPlayPauseRequest) returns (PlayerPlayPauseResponse) {}
+    rpc PlayerSetProperty(PlayerSetPropertyRequest) returns (PlayerSetPropertyResponse) {}
+}
+
+// Request messages
+message GetVersionRequest {}
+
+message LibraryUpdateRequest {
+    string name = 1;
+}
+
+message LibraryGetFolderContentRequest {
+    string name = 1;
+    string folder = 2;
+}
+
+message LibraryGetVideoByIDRequest {
+    int32 videoid = 1;
+}
+
+message PlayerGetStateRequest {}
+message PlayerStreamStateRequest {
+    string client = 1;
+}
+
+message PlayerOpenVideoRequest {
+    int32 videoid = 1;
+    int32 position = 2;
+}
+
+message PlayerStopRequest {}
+message PlayerPlayPauseRequest {}
+
+message PlayerSetPropertyRequest {
+    string name = 1;
+    int32 value = 2;
+}
+
+// Response messages
+
+message GetVersionResponse {
+    string version = 2;
+}
+
+message LibraryUpdateResponse {}
+
+message LibraryGetFolderContentResponse {
+    message Folder {
+        string name = 1;
+        string path = 2;
+    }
+
+    message VideoFile {
+        int32 id = 1;
+        string name = 2;
+        string path = 3;
+        float duration = 4;
+        int64 played_at = 5;
+        int32 last_position = 6;
+    }
+
+    repeated Folder folders = 1;
+    repeated VideoFile videos = 2;
+}
+
+message LibraryGetVideoByIDResponse {
+    message Stream {
+        int32 idx = 1;
+        string lang = 2;
+    }
+
+    int32 id = 1;
+    string name = 2;
+    float duration = 4;
+
+    repeated Stream audio_streams = 5;
+    repeated Stream sub_streams = 6;
+}
+
+message PlayerGetStateResponse {
+    int32 volume = 2;
+    string playing_status = 3;
+    int32 video_id = 4;
+    int32 aid = 5;
+    int32 sid = 6;
+    float time_position = 7;
+}
+
+message PlayerStreamStateResponse {
+    int32 volume = 2;
+    string playing_status = 3;
+    int32 video_id = 4;
+    int32 aid = 5;
+    int32 sid = 6;
+    float time_position = 7;
+}
+
+message PlayerOpenVideoResponse {}
+message PlayerStopResponse {}
+message PlayerPlayPauseResponse {}
+message PlayerSetPropertyResponse {}

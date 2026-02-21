@@ -1,0 +1,22 @@
+version: v2
+inputs:
+  - proto_file: player/v1/player.proto
+    include_package_files: true
+clean: true
+plugins:
+  - local: protoc-gen-go
+    out: gen
+    opt: paths=source_relative
+  - local: protoc-gen-connect-go
+    out: gen
+    opt:
+      - paths=source_relative
+      - simple
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/mroy31/go-video-daemon/gen
+  disable:
+    - file_option: go_package
+      module: buf.build/bufbuild/protovalidate
