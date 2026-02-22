@@ -256,7 +256,7 @@ func (s *VideoDaemonServer) PlayerStreamState(
 			s.subscribers.Delete(clientId)
 			return nil
 		case <-ctx.Done():
-			logrus.Infof("Client ID %s has disconnected", rq.Client)
+			logrus.Debugf("Client ID %s has disconnected", rq.Client)
 			s.subscribers.Delete(clientId)
 			return nil
 		}

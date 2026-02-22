@@ -19,8 +19,7 @@ type LibraryConfig struct {
 }
 
 type PlayerConfig struct {
-	Fullscreen bool
-	Socket     string
+	Socket string
 }
 
 type VideoDaemonServerConfig struct {
@@ -35,7 +34,6 @@ var (
 listen: "localhost:10123"
 player:
   socket: /tmp/mpv-ipc-socket
-  fullscreen: no
 library:
   database: "db/go-video-daemon.db"
   movies: "/Users/mroyer/Movies/Films"
