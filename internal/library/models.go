@@ -2,12 +2,10 @@ package library
 
 import (
 	"time"
-
-	"gorm.io/gorm"
 )
 
 type Library struct {
-	gorm.Model
+	ID   uint `gorm:"primaryKey"`
 	Name string
 	Path string
 
@@ -15,7 +13,7 @@ type Library struct {
 }
 
 type LibraryFolder struct {
-	gorm.Model
+	ID   uint `gorm:"primaryKey"`
 	Name string
 	Path string
 
@@ -29,7 +27,7 @@ type LibraryFolder struct {
 }
 
 type Video struct {
-	gorm.Model
+	ID           uint `gorm:"primaryKey"`
 	Name         string
 	Path         string
 	Duration     float64
@@ -44,7 +42,7 @@ type Video struct {
 }
 
 type AudioStream struct {
-	gorm.Model
+	ID   uint `gorm:"primaryKey"`
 	Lang string
 	Idx  int
 
@@ -53,7 +51,7 @@ type AudioStream struct {
 }
 
 type SubtitleStream struct {
-	gorm.Model
+	ID   uint `gorm:"primaryKey"`
 	Lang string
 	Idx  int
 

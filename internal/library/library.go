@@ -99,6 +99,15 @@ func (v *VideoLibrary) isLibraryFolderExist(recordedFolders []LibraryFolder, pat
 	return false
 }
 
+func (v *VideoLibrary) getVideo(recordedVideos []Video, path string) *Video {
+	for _, vid := range recordedVideos {
+		if vid.Path == path {
+			return &vid
+		}
+	}
+	return nil
+}
+
 func (v *VideoLibrary) isVideoExist(recordedVideos []Video, path string) bool {
 	for _, f := range recordedVideos {
 		if f.Path == path {
@@ -117,10 +126,9 @@ func (v *VideoLibrary) GetFolderContent(relPath string) (LibraryFolder, error) {
 }
 
 func (v *VideoLibrary) Update() error {
-	validFolders := make([]string, 0)
-
 	var recordedFolders []LibraryFolder
 	var recordedVideos []Video
+
 	result := v.Db.Where(&LibraryFolder{LibraryID: v.Library.ID}).Find(&recordedFolders)
 	if result.Error != nil {
 		return fmt.Errorf("unbale to get library folders: %v", result.Error)
@@ -130,7 +138,10 @@ func (v *VideoLibrary) Update() error {
 		return fmt.Errorf("unbale to get video medias: %v", result.Error)
 	}
 
-	return filepath.WalkDir(v.Library.Path, func(path string, d fs.DirEntry, err error) error {
+	var validFolders []string
+	var foundVideoPaths []string
+
+	err := filepath.WalkDir(v.Library.Path, func(path string, d fs.DirEntry, err error) error {
 		if d.IsDir() && strings.HasPrefix(d.Name(), ".") {
 			v.logger.Infof("Skip hidden folder %s", path)
 			return filepath.SkipDir // skip hidden folder
@@ -146,13 +157,22 @@ func (v *VideoLibrary) Update() error {
 			return fmt.Errorf("unable to find folder %s in the database", filepath.Dir(path))
 		}
 
-		if d.IsDir() && !v.isLibraryFolderExist(recordedFolders, path) {
-			lFolder, err := v.createLibraryFolder(&parent.ID, path, d.Name())
-			if err != nil {
-				return err
+		if d.IsDir() {
+			lFolder := v.getLibraryFolder(recordedFolders, path)
+			if lFolder == nil {
+				var err error
+
+				lFolder, err = v.createLibraryFolder(&parent.ID, path, d.Name())
+				if err != nil {
+					return err
+				}
+				recordedFolders = append(recordedFolders, *lFolder)
+			} else {
+				lFolder.ParentID = &parent.ID
+				v.Db.Save(lFolder)
 			}
-			recordedFolders = append(recordedFolders, *lFolder)
-			validFolders = append(validFolders, filepath.Join(path, d.Name()))
+
+			validFolders = append(validFolders, path)
 		}
 
 		if !d.IsDir() && IsValidVideoFile(d.Name()) {
@@ -163,7 +183,8 @@ func (v *VideoLibrary) Update() error {
 				return nil
 			}
 
-			if !v.isVideoExist(recordedVideos, path) {
+			video := v.getVideo(recordedVideos, path)
+			if video == nil {
 				duration, _ := strconv.ParseFloat(infos.Format.Duration, 32)
 				videoModel := &Video{
 					Name:            d.Name(),
@@ -193,11 +214,27 @@ func (v *VideoLibrary) Update() error {
 				if result := v.Db.Create(videoModel); result.Error != nil {
 					v.logger.Warnf("Unable to recors video %s: %v", d.Name(), err)
 				}
+			} else {
+				video.LibraryFolderID = parent.ID
+				v.Db.Save(video)
 			}
+
+			foundVideoPaths = append(foundVideoPaths, path)
 		}
 
 		return nil
 	})
+
+	if err != nil {
+		return fmt.Errorf("Library update error - %v", err)
+	}
+
+	// remove all videos/folders removed fron the db
+	ctx := context.Background()
+	gorm.G[Video](v.Db).Where("path NOT IN ?", foundVideoPaths).Delete(ctx)
+	gorm.G[LibraryFolder](v.Db).Where("library_id = ? AND path NOT IN ? AND name != ?", v.Library.ID, validFolders, "").Delete(ctx)
+
+	return nil
 }
 
 type LibraryFactory struct {
