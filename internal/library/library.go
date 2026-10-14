@@ -231,7 +231,9 @@ func (v *VideoLibrary) Update() error {
 
 	// remove all videos/folders removed fron the db
 	ctx := context.Background()
-	gorm.G[Video](v.Db).Where("path NOT IN ?", foundVideoPaths).Delete(ctx)
+	gorm.G[Video](v.Db).
+		Where("library_folder_id IN (?)", v.Db.Model(&LibraryFolder{}).Select("id").Where("library_id = ?", v.Library.ID)).
+		Where("path NOT IN ?", foundVideoPaths).Delete(ctx)
 	gorm.G[LibraryFolder](v.Db).Where("library_id = ? AND path NOT IN ? AND name != ?", v.Library.ID, validFolders, "").Delete(ctx)
 
 	return nil
